@@ -1,0 +1,1 @@
+# community-cordova-plugin-file-chooser
