@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+        id="community-cordova-plugin-file-chooser"
+        version="1.0.0">
+    <name>Cordova Plugin File Chooser</name>
+    <description></description>
+    <license>MIT</license>
+    <keywords></keywords>
+    <repo>https://github.com/eyalin/community-cordova-plugin-file-chooser.git</repo>
+    <issue>https://github.com/eyalin/community-cordova-plugin-file-chooser/issues</issue>
+
+    <!-- android -->
+    <platform name="android">
+        <js-module src="www/plugin.js" name="FileChooserPlugin">
+            <runs/>
+
+            <!-- This is the window variable name you want, like window.FileChooserPlugin -->
+            <clobbers target="FileChooserPlugin" />
+        </js-module>
+        <config-file target="AndroidManifest.xml" parent="/manifest">
+            <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
+        </config-file>
+
+
+        <config-file target="res/xml/config.xml" parent="/*">
+            <feature name="FileChooserPlugin">
+                <param name="android-package" value="CommunityPlugins.FileChooser.android.FileChooserPlugin" />
+                <param name="onload" value="true" />
+            </feature>
+        </config-file>
+
+        <source-file src="src/android/FileChooserPlugin.java" target-dir="src/CommunityPlugins/FileChooser/android" />
+    </platform>
+
+    <!-- ios -->
+    <platform name="ios">
+        <js-module src="www/plugin.js" name="plugin">
+            <runs/>
+            <clobbers target="FileChooserPlugin" />
+        </js-module>
+        <config-file target="config.xml" parent="/*">
+            <feature name="FileChooserPlugin">
+                <param name="ios-package" value="FileChooserPlugin" onload="true" />
+            </feature>
+        </config-file>
+
+        <header-file src="src/ios/FileChooserPlugin.h" />
+        <source-file src="src/ios/FileChooserPlugin.m" />
+    </platform>
+</plugin>
