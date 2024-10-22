@@ -73,30 +73,3 @@ public class FileChooserPlugin extends CordovaPlugin {
     }
 }
 
-// JavaScript interface (plugin.js)
-var exec = require('cordova/exec');
-
-exports.chooseFile = function (options, successCallback, errorCallback) {
-    options = options || {};
-    exec(successCallback, errorCallback, 'FileChooserPlugin', 'chooseFile', [options]);
-};
-
-// TypeScript Definition file (index.d.ts)
-export type ResponseType = 'path' | 'base64';
-
-export interface FileChooserOptions {
-    responseType?: ResponseType;
-    mimeType?: string;
-}
-
-export declare function chooseFile(options?: FileChooserOptions): Promise<string>;
-
-// TypeScript implementation file (index.ts)
-import { chooseFile as chooseFileNative } from './plugin';
-import { FileChooserOptions } from './index.d';
-
-export function chooseFile(options?: FileChooserOptions): Promise<string> {
-    return new Promise((resolve, reject) => {
-        chooseFileNative(options, resolve, reject);
-    });
-}
