@@ -1,10 +1,17 @@
-export type ResponseType = 'path' | 'base64';
-
 export interface FileChooserOptions {
-    responseType?: ResponseType;
     mimeType?: string;
+    includeBase64?: boolean;
+    multiple?: boolean;
+}
+
+export interface FileChooserResponse {
+    fileName: string;
+    path: string;
+    extension: string;
+    fileSize: number;
+    base64?: string;
 }
 
 export default class FileChooserManager {
-    chooseFile(options: FileChooserOptions): Promise<string>;
+    chooseFile(options: FileChooserOptions): Promise<FileChooserResponse[]>;
 }
