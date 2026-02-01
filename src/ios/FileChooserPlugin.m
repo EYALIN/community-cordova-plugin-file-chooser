@@ -4,9 +4,9 @@
 
 - (void)chooseFile:(CDVInvokedUrlCommand*)command {
     self.callbackId = command.callbackId;
-    NSDictionary* options = [command.arguments objectAtIndex:0];
-    NSString* mimeType = options[@"mimeType"] ?: @"public.data";
-    BOOL multiple = [options[@"multiple"] boolValue];
+    self.options = [command.arguments objectAtIndex:0];
+    NSString* mimeType = self.options[@"mimeType"] ?: @"public.data";
+    BOOL multiple = [self.options[@"multiple"] boolValue];
 
     UIDocumentPickerViewController* documentPicker = [[UIDocumentPickerViewController alloc] initWithDocumentTypes:@[mimeType] inMode:UIDocumentPickerModeImport];
     documentPicker.delegate = self;
