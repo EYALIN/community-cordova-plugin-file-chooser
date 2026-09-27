@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.webkit.MimeTypeMap;
 import androidx.annotation.Nullable;
 import org.apache.cordova.CallbackContext;
@@ -18,6 +19,8 @@ import java.util.Base64;
 import java.util.List;
 
 public class FileChooserPlugin extends CordovaPlugin {
+    private static final String TAG = "FileChooserPlugin";
+    private static final String STATE_OPTIONS = "options";
     private static final int FILE_SELECT_CODE = 0;
     private CallbackContext callbackContext;
     private JSONObject options;
@@ -48,10 +51,48 @@ public class FileChooserPlugin extends CordovaPlugin {
         cordova.startActivityForResult(this, Intent.createChooser(intent, "Select File(s)"), FILE_SELECT_CODE);
     }
 
+    // Android may kill the app process while the system picker is open ("Don't keep activities",
+    // low memory). cordova-android then recreates the plugin and calls
+    // onRestoreStateForActivityResult with a new CallbackContext before onActivityResult, so the
+    // options must be saved and the callback taken from the restore call.
+    @Override
+    public Bundle onSaveInstanceState() {
+        Bundle state = new Bundle();
+        if (options != null) {
+            state.putString(STATE_OPTIONS, options.toString());
+        }
+        return state;
+    }
+
+    @Override
+    public void onRestoreStateForActivityResult(Bundle state, CallbackContext callbackContext) {
+        this.callbackContext = callbackContext;
+        String saved = state != null ? state.getString(STATE_OPTIONS) : null;
+        if (saved != null) {
+            try {
+                this.options = new JSONObject(saved);
+            } catch (JSONException e) {
+                this.options = null;
+            }
+        }
+    }
+
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == FILE_SELECT_CODE && resultCode == Activity.RESULT_OK) {
-            if (data != null) {
+        if (requestCode != FILE_SELECT_CODE) {
+            return;
+        }
+        CallbackContext callbackContext = this.callbackContext;
+        this.callbackContext = null;
+        if (callbackContext == null) {
+            // no JS call is waiting (e.g. the app was restarted without a restore): nothing to answer
+            Log.w(TAG, "File chooser result without a pending callback, ignoring");
+            return;
+        }
+        if (resultCode == Activity.RESULT_OK) {
+            if (data == null) {
+                callbackContext.error("No file selected");
+            } else {
                 try {
                     List<JSONObject> fileList = new ArrayList<>();
                     boolean includeBase64 = options != null && options.optBoolean("includeBase64", false);
