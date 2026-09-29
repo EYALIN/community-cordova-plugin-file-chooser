@@ -1,7 +1,8 @@
 package android.content.res;
-public class AssetFileDescriptor {
+import java.io.Closeable;
+public class AssetFileDescriptor implements Closeable {
     private final long length;
     public AssetFileDescriptor(long l) { length = l; }
     public long getLength() { return length; }
-    public void close() {}
+    @Override public void close() {}
 }

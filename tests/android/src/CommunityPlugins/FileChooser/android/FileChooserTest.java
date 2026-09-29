@@ -11,6 +11,8 @@ import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.Base64;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.AbstractExecutorService;
@@ -87,6 +89,58 @@ public class FileChooserTest {
             p.execute("chooseFile", new JSONArray(), cb);
             p.onActivityResult(0, Activity.RESULT_OK, null);
             check(cb.results.size() == 1 && cb.results.get(0).status == PluginResult.Status.ERROR, "got " + cb.results);
+        });
+        test("[PLU-91] includeBase64 decodes to the exact stream size, not just available()", () -> {
+            Activity a = new Activity();
+            byte[] big = new byte[50000];
+            for (int i = 0; i < big.length; i++) { big[i] = (byte) (i % 251); }
+            a.resolver.content = big;
+            a.resolver.cursorValues = new Object[]{"backup.db", (long) big.length};
+            FileChooserPlugin p = newPlugin(a);
+            CallbackContext cb = new CallbackContext();
+            p.execute("chooseFile", new JSONArray().put(new JSONObject().put("includeBase64", true)), cb);
+            p.onActivityResult(0, Activity.RESULT_OK, picked("content://docs/backup.db"));
+            check(cb.results.size() == 1 && cb.results.get(0).status == PluginResult.Status.OK, "got " + cb.results);
+            JSONObject file = ((JSONArray) cb.results.get(0).message).getJSONObject(0);
+            byte[] decoded = Base64.getDecoder().decode(file.getString("base64"));
+            check(decoded.length == big.length, "decoded " + decoded.length + " bytes, expected " + big.length);
+            check(file.getLong("fileSize") == big.length, "fileSize=" + file.getLong("fileSize"));
+        });
+        test("[PLU-91] a 0-byte stream errors instead of returning an empty base64", () -> {
+            Activity a = new Activity();
+            a.resolver.content = new byte[0];
+            FileChooserPlugin p = newPlugin(a);
+            CallbackContext cb = new CallbackContext();
+            p.execute("chooseFile", new JSONArray().put(new JSONObject().put("includeBase64", true)), cb);
+            p.onActivityResult(0, Activity.RESULT_OK, picked("content://docs/empty.db"));
+            check(cb.results.size() == 1 && cb.results.get(0).status == PluginResult.Status.ERROR, "got " + cb.results);
+        });
+        test("[PLU-92] fileName/extension/fileSize come from OpenableColumns, not the URI segment", () -> {
+            Activity a = new Activity();
+            a.resolver.cursorColumns = new String[]{"_display_name", "_size"};
+            a.resolver.cursorValues = new Object[]{"backup.db", 12345L};
+            a.resolver.content = new byte[10];
+            FileChooserPlugin p = newPlugin(a);
+            CallbackContext cb = new CallbackContext();
+            p.execute("chooseFile", new JSONArray().put(new JSONObject()), cb);
+            p.onActivityResult(0, Activity.RESULT_OK, picked("content://com.android.providers.downloads.documents/document/1234"));
+            JSONObject file = ((JSONArray) cb.results.get(0).message).getJSONObject(0);
+            check(file.getString("fileName").equals("backup.db"), "fileName=" + file.getString("fileName"));
+            check(file.getString("extension").equals("db"), "extension=" + file.getString("extension"));
+            check(file.getLong("fileSize") == 12345L, "fileSize=" + file.getLong("fileSize"));
+        });
+        test("[PLU-92] falls back to the URI segment when the OpenableColumns query returns nothing", () -> {
+            Activity a = new Activity();
+            a.resolver.queryReturnsNull = true;
+            a.resolver.content = new byte[7];
+            FileChooserPlugin p = newPlugin(a);
+            CallbackContext cb = new CallbackContext();
+            p.execute("chooseFile", new JSONArray().put(new JSONObject()), cb);
+            p.onActivityResult(0, Activity.RESULT_OK, picked("content://docs/fallback.db"));
+            JSONObject file = ((JSONArray) cb.results.get(0).message).getJSONObject(0);
+            check(file.getString("fileName").equals("fallback.db"), "fileName=" + file.getString("fileName"));
+            check(file.getString("extension").equals("db"), "extension=" + file.getString("extension"));
+            check(file.getLong("fileSize") == 7L, "fileSize=" + file.getLong("fileSize") + " (should fall back to AssetFileDescriptor length)");
         });
         System.out.println();
         System.out.println(passed + " passed, " + failed + " failed");

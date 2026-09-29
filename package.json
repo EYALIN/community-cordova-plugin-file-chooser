@@ -1,8 +1,16 @@
 {
   "name": "community-cordova-plugin-file-chooser",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "types": "./types/index.d.ts",
   "readme": "README.md",
+  "license": "MIT",
+  "files": [
+    "src",
+    "www",
+    "types",
+    "plugin.xml",
+    "LICENSE"
+  ],
   "repository": "EYALIN/community-cordova-plugin-file-chooser/tree/master",
   "homepage": "https://github.com/EYALIN/community-cordova-plugin-file-chooser/tree/master",
   "funding": "https://github.com/sponsors/EYALIN",
