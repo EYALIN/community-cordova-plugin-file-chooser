@@ -4,7 +4,11 @@
 
 - (void)chooseFile:(CDVInvokedUrlCommand*)command {
     self.callbackId = command.callbackId;
-    self.options = [command.arguments objectAtIndex:0];
+    // PLU-93: chooseFile() called with no options serializes to a single NSNull argument (not an
+    // empty array), and an empty arguments array is possible too; either one used to crash on the
+    // dictionary subscript below because neither NSNull nor a missing index responds like a dict.
+    id rawOptions = command.arguments.count > 0 ? [command.arguments objectAtIndex:0] : nil;
+    self.options = [rawOptions isKindOfClass:[NSDictionary class]] ? rawOptions : @{};
     NSString* mimeType = self.options[@"mimeType"] ?: @"public.data";
     BOOL multiple = [self.options[@"multiple"] boolValue];
 
